@@ -62,6 +62,7 @@ const PriceChart = React.memo(function PriceChart({ selectedCoin }: PriceChartPr
 
       const len = data.length;
       if (len === 0) { rafRef.current = requestAnimationFrame(render); return; }
+      if (len === 1) { rafRef.current = requestAnimationFrame(render); return; } // need 2+ points
 
       // Layout
       const pl = 15, pr = 55, pt = 25, pb = 20;

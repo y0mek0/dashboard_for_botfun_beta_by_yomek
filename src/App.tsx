@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import ErrorBoundary from './components/ErrorBoundary';
-import { fetchStats, fetchTiaPrice, fetchCoins, fetchAgents, fetchActivity, fetchCoinHolders, fetchNewCoins } from './api';
+import { fetchStats, fetchTiaPrice, fetchCoins, fetchAgents, fetchActivity, fetchCoinHolders, fetchNewCoins, fetchCoinCandles } from './api';
 import { Coin, Agent, FeedEvent, LaunchItem, SystemStats } from './types';
 
 // Import Custom Subcomponents
@@ -211,6 +211,23 @@ export default function App() {
         };
       }));
     }).catch(() => {}); // silent — keep empty
+    return () => { cancelled = true; };
+  }, [selectedCoinId]);
+
+  // Fetch candles when selected coin changes (for Price Chart)
+  useEffect(() => {
+    if (!selectedCoinId) return;
+    const coin = coins.find(c => c.id === selectedCoinId);
+    if (!coin || coin.priceHistory.length > 1) return; // already has candles
+    let cancelled = false;
+    fetchCoinCandles(coin.address, '1h', 40).then(candles => {
+      if (cancelled || !candles.length) return;
+      const prices = candles.map(k => parseFloat(k.close));
+      setCoins(prev => prev.map(c => {
+        if (c.id !== selectedCoinId) return c;
+        return { ...c, priceHistory: prices };
+      }));
+    }).catch(() => {});
     return () => { cancelled = true; };
   }, [selectedCoinId]);
 
