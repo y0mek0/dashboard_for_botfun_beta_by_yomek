@@ -1,14 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import ErrorBoundary from './components/ErrorBoundary';
 import { fetchStats, fetchTiaPrice, fetchCoins, fetchAgents, fetchActivity, fetchCoinCandles } from './api';
-import {
-  getInitialCoins,
-  getInitialAgents,
-  getInitialFeed,
-  getInitialLaunches,
-  getInitialStats,
-  tickSimulation,
-} from './simulation';
 import { Coin, Agent, FeedEvent, LaunchItem, SystemStats } from './types';
 
 // Import Custom Subcomponents
@@ -48,18 +40,20 @@ export default function App() {
   const [agents, setAgents] = useState<Agent[]>([]);
   const [feed, setFeed] = useState<FeedEvent[]>([]);
   const [launches, setLaunches] = useState<LaunchItem[]>([]);
-  const [stats, setStats] = useState<SystemStats>(getInitialStats());
+  const [stats, setStats] = useState<SystemStats>({
+    coinsCount: 0, agentsCount: 0, tradesCount: 0,
+    tiaPrice: 0, blockHeight: 0, latency: 0, tps: 0, apiStatus: 'ONLINE',
+  });
 
   // Workspace Focus States
   const [selectedCoinId, setSelectedCoinId] = useState<string>('');
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
 
   // Simulation Controls
-  const [speed, setSpeed] = useState<number>(1000); // 1.0 Hz default tick
   const [isPaused, setIsPaused] = useState<boolean>(false);
-  const [lastTriggeredEvent, setLastTriggeredEvent] = useState<FeedEvent | null>(null);
+  const [dataSource, setDataSource] = useState<'api' | 'error'>('error');
 
-  // Populate data — try real API first, fallback to simulation
+  // Populate data — real API only, no simulation
   useEffect(() => {
     let cancelled = false;
 
@@ -130,140 +124,52 @@ export default function App() {
           coinsCount: stats.coins, agentsCount: stats.agents, tradesCount: stats.trades,
           tiaPrice, blockHeight: 4892000, latency: 18, tps: 42, apiStatus: 'ONLINE',
         });
+        setDataSource('api');
         setCoins(realCoins);
         setAgents(realAgents);
         setFeed(realFeed.slice(0, 30));
-        setLaunches(getInitialLaunches()); // launches from sim
+        setLaunches([]);
         if (realCoins.length > 0) setSelectedCoinId(realCoins[0].id);
         if (realAgents.length > 0) setSelectedAgentId(realAgents[0].id);
       } catch (err) {
         if (cancelled) return;
-        console.warn('[Botic] API unavailable, using simulation:', (err as Error).message);
-        loadSimulation();
+        console.error('[Botic] API failed:', (err as Error).message);
+        setDataSource('error');
       }
-    }
-
-    function loadSimulation() {
-      const initialCoins = getInitialCoins();
-      const initialAgents = getInitialAgents();
-      setCoins(initialCoins);
-      setAgents(initialAgents);
-      setFeed(getInitialFeed(initialCoins, initialAgents));
-      setLaunches(getInitialLaunches());
-      setStats(getInitialStats());
-      if (initialCoins.length > 0) setSelectedCoinId(initialCoins[0].id);
-      if (initialAgents.length > 0) setSelectedAgentId(initialAgents[0].id);
     }
 
     loadFromApi();
     return () => { cancelled = true; };
   }, []);
 
-  // Main Continuous Simulation interval Loop
+  // Periodic API polling — every 5 seconds
   useEffect(() => {
-    if (isPaused || coins.length === 0) return;
-
-    const interval = setInterval(() => {
-      const nextState = tickSimulation(coins, agents, feed, launches, stats);
-      
-      setCoins(nextState.coins);
-      setAgents(nextState.agents);
-      setFeed(nextState.feed);
-      setLaunches(nextState.launches);
-      setStats(nextState.stats);
-      
-      if (nextState.triggeredEvent) {
-        setLastTriggeredEvent(nextState.triggeredEvent);
-      }
-    }, speed);
-
+    if (isPaused) return;
+    const interval = setInterval(async () => {
+      try {
+        const [stats, tiaPrice, apiActivity] = await Promise.all([
+          fetchStats(), fetchTiaPrice(), fetchActivity(30)
+        ]);
+        setStats(prev => ({
+          ...prev,
+          coinsCount: stats.coins, agentsCount: stats.agents, tradesCount: stats.trades,
+          tiaPrice,
+        }));
+        const realFeed: FeedEvent[] = apiActivity.map(a => ({
+          id: `api_${a.id}`,
+          timestamp: new Date(a.timestamp).toLocaleTimeString(),
+          timeRaw: new Date(a.timestamp),
+          type: a.type === 'post' ? 'POST' : a.type === 'launch' ? 'LAUNCH' : a.type === 'buy' ? 'BUY' : 'SELL',
+          symbol: a.coinSymbol,
+          agentName: a.senderUsername || a.sender.slice(0, 6),
+          amount: a.tiaAmount ? parseFloat(a.tiaAmount) : undefined,
+          content: a.content || undefined,
+        }));
+        setFeed(realFeed.slice(0, 30));
+      } catch { /* silent — keep previous data */ }
+    }, 5000);
     return () => clearInterval(interval);
-  }, [isPaused, coins, agents, feed, launches, stats, speed]);
-
-  // Handle manual Quick Trade (allows user to directly manipulate the asset statistics)
-  const handleQuickTrade = (coinId: string, type: 'BUY' | 'SELL', amount: number) => {
-    const targetCoinIndex = coins.findIndex((c) => c.id === coinId);
-    if (targetCoinIndex === -1) return;
-
-    const targetCoin = coins[targetCoinIndex];
-    const isBuy = type === 'BUY';
-    
-    // Direct percentage price impact
-    const priceImpact = (amount / targetCoin.marketCap) * 15 + (isBuy ? 0.04 : -0.035);
-    const updatedPrice = Math.max(0.001, targetCoin.price * (1 + priceImpact));
-    const updatedHistory = [...targetCoin.priceHistory.slice(1), updatedPrice];
-    const updatedCap = Math.round(updatedPrice * (10000000 + targetCoinIndex * 500000));
-    const updatedBonding = Math.min(99.9, Math.max(10, targetCoin.bondingProgress + (priceImpact * 75)));
-
-    // Select random agent representing user or autonomous entity
-    const randAgent = agents[Math.floor(Math.random() * agents.length)];
-
-    // Construct precise manual log feed item
-    const manualEvent: FeedEvent = {
-      id: `manual_tx_${Date.now()}`,
-      timestamp: 'Just now',
-      timeRaw: new Date(),
-      type: type,
-      agentId: randAgent.id,
-      agentName: `${randAgent.name.split(' ')[0]} (Manual)`,
-      symbol: targetCoin.symbol,
-      amount: amount,
-      price: updatedPrice,
-    };
-
-    // Update Coin State
-    const nextCoins = coins.map((c) => {
-      if (c.id === coinId) {
-        // Update holder shares slightly
-        const updatedHolders = c.holders.map((h, hIdx) => {
-          const shift = (Math.random() * 2 - 1) * 0.1;
-          return {
-            ...h,
-            pnl: parseFloat((h.pnl + priceImpact * 100).toFixed(1)),
-            supplyShare: parseFloat(Math.max(0.2, h.supplyShare + (hIdx === 0 ? shift : -shift / (c.holders.length - 1))).toFixed(1)),
-          };
-        });
-
-        return {
-          ...c,
-          price: updatedPrice,
-          priceHistory: updatedHistory,
-          marketCap: updatedCap,
-          volume24h: c.volume24h + amount,
-          change24h: parseFloat((c.change24h + priceImpact * 100).toFixed(2)),
-          bondingProgress: parseFloat(updatedBonding.toFixed(1)),
-          holders: updatedHolders,
-        };
-      }
-      return c;
-    });
-
-    // Update Agent parameters to align PnL
-    const nextAgents = agents.map((a) => {
-      if (a.id === randAgent.id) {
-        return {
-          ...a,
-          status: 'EXECUTING' as const,
-          activeCoinId: coinId,
-          tradeCount: a.tradeCount + 1,
-          unrealized: parseFloat(Math.max(100, a.unrealized + (isBuy ? amount * 0.1 : -amount * 0.05)).toFixed(1)),
-          pnl: parseFloat((a.pnl + (isBuy ? 2.5 : -1.8)).toFixed(1)),
-        };
-      }
-      return a;
-    });
-
-    // Master state update sequence
-    setCoins(nextCoins);
-    setAgents(nextAgents);
-    setFeed([manualEvent, ...feed].slice(0, 30));
-    setLastTriggeredEvent(manualEvent);
-    setStats({
-      ...stats,
-      tradesCount: stats.tradesCount + 1,
-      tps: parseFloat((stats.tps + 4.5).toFixed(1)),
-    });
-  };
+  }, [isPaused, coins.length]);
 
   // Find targeted active coin
   const activeCoin = coins.find((c) => c.id === selectedCoinId) || coins[0];
@@ -278,10 +184,9 @@ export default function App() {
       <div className="h-[70px] shrink-0">
         <Header
           stats={stats}
-          speed={speed}
-          setSpeed={setSpeed}
           isPaused={isPaused}
           setIsPaused={setIsPaused}
+          dataSource={dataSource}
         />
       </div>
 
@@ -298,7 +203,7 @@ export default function App() {
                 agents={agents}
                 selectedCoinId={selectedCoinId}
                 onSelectCoin={setSelectedCoinId}
-                lastTriggeredEvent={lastTriggeredEvent}
+                lastTriggeredEvent={null}
               />
             </TerminalPanel></ErrorBoundary>
           </div>

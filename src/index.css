@@ -226,6 +226,15 @@
   animation: fadeIn 0.3s ease-out both;
 }
 
+/* Feed new item slide-in */
+@keyframes feedSlideIn {
+  from { opacity: 0; transform: translateY(-12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-feedNew {
+  animation: feedSlideIn 0.35s ease-out both;
+}
+
 /* Reduced motion preference */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

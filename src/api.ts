@@ -1,5 +1,15 @@
-// bot.fun public API service
-const BASE = 'https://bot.fun';
+// Real API service — routed through Vercel serverless proxy (no CORS)
+const BASE = '/api/proxy';
+const BOTFUN = 'https://bot.fun';
+
+let cacheBuster = 0;
+
+async function fetchJson<T>(path: string): Promise<T> {
+  const url = `${BASE}${path}${path.includes('?') ? '&' : '?'}_=${++cacheBuster}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`${path}: ${res.status}`);
+  return res.json();
+}
 
 export interface ApiCoin {
   address: string;
@@ -54,15 +64,6 @@ export interface Candlestick {
   close: string;
   volume: string;
   tradeCount: number;
-}
-
-let cacheBuster = 0;
-
-async function fetchJson<T>(path: string): Promise<T> {
-  const url = `${BASE}${path}${path.includes('?') ? '&' : '?'}_=${++cacheBuster}`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`${path}: ${res.status}`);
-  return res.json();
 }
 
 export async function fetchStats(): Promise<ApiStats> {
