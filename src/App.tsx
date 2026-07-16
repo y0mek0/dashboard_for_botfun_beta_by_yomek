@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import ErrorBoundary from './components/ErrorBoundary';
-import { fetchStats, fetchTiaPrice, fetchCoins, fetchAgents, fetchActivity, fetchCoinHolders } from './api';
+import { fetchStats, fetchTiaPrice, fetchCoins, fetchAgents, fetchActivity, fetchCoinHolders, fetchNewCoins } from './api';
 import { Coin, Agent, FeedEvent, LaunchItem, SystemStats } from './types';
 
 // Import Custom Subcomponents
@@ -65,27 +65,21 @@ export default function App() {
 
         if (cancelled) return;
 
-        // Transform API coins — with price variation and holders
-        const price = parseFloat(apiCoins[0]?.price || '0');
+        // Transform API coins — real data only, no fake values
         const realCoins: Coin[] = apiCoins.map((c, i) => ({
           id: c.symbol.toLowerCase(),
           symbol: c.symbol,
           name: c.name,
+          address: c.address,
           price: parseFloat(c.price),
-          // Generate slight price variation for chart
-          priceHistory: Array.from({ length: 40 }, (_, j) => {
-            const base = parseFloat(c.price);
-            const noise = (Math.sin(j / 5) + Math.cos(j / 7)) * base * 0.02;
-            return base + noise;
-          }),
+          priceHistory: [parseFloat(c.price)], // real current price, candles loaded later
           marketCap: Math.round(parseFloat(c.marketCap)),
           volume24h: Math.round(parseFloat(c.volume24h)),
           change24h: 0,
           bondingProgress: 50,
           holdersCount: c.tradeCount,
           holders: [],
-          // Real 24h activity data from trade activity
-          activity24h: Array.from({ length: 24 }, () => Math.floor(Math.random() * 50 + 5)),
+          activity24h: [], // no 24h breakdown in public API
         }));
 
         // Fetch holders for first coin (for Supply Share treemap)
@@ -110,10 +104,10 @@ export default function App() {
           tradeCount: a.tradeCount,
           realized: parseFloat(a.realizedPnl),
           unrealized: parseFloat(a.unrealizedPnl),
-          riskScore: Math.floor(Math.random() * 50 + 30),
-          mentionScore: Math.floor(Math.random() * 60 + 25),
-          volumeScore: Math.floor(Math.random() * 70 + 20),
-          pnlScore: Math.floor(Math.random() * 80 + 15),
+          riskScore: 0,        // not in public API
+          mentionScore: 0,     // not in public API
+          volumeScore: 0,      // not in public API
+          pnlScore: 0,         // not in public API
           activeCoinId: null,
           color: ['#38bdf8','#22c55e','#a855f7','#f43f5e','#eab308','#6366f1','#f97316','#14b8a6'][i % 8],
         }));
@@ -139,7 +133,21 @@ export default function App() {
         setCoins(realCoins);
         setAgents(realAgents);
         setFeed(realFeed.slice(0, 30));
-        setLaunches([]);
+        // Fetch real launches from API
+        try {
+          const newCoins = await fetchNewCoins();
+          setLaunches(newCoins.map(c => ({
+            id: c.address.slice(0, 8),
+            symbol: c.symbol,
+            name: c.name,
+            time: new Date(c.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            timestamp: new Date(c.createdAt),
+            marketCap: Math.round(parseFloat(c.marketCap)),
+            successScore: 50,
+          })));
+        } catch {
+          setLaunches([]);
+        }
         if (realCoins.length > 0) setSelectedCoinId(realCoins[0].id);
         if (realAgents.length > 0) setSelectedAgentId(realAgents[0].id);
       } catch (err) {
@@ -181,6 +189,30 @@ export default function App() {
     }, 5000);
     return () => clearInterval(interval);
   }, [isPaused, coins.length]);
+
+  // Fetch holders when selected coin changes
+  useEffect(() => {
+    if (!selectedCoinId) return;
+    const coin = coins.find(c => c.id === selectedCoinId);
+    if (!coin || coin.holders.length > 0) return; // already has holders
+    let cancelled = false;
+    fetchCoinHolders(coin.address).then(holders => {
+      if (cancelled) return;
+      setCoins(prev => prev.map(c => {
+        if (c.id !== selectedCoinId) return c;
+        return {
+          ...c,
+          holders: holders.map(h => ({
+            id: h.address.slice(0, 8),
+            name: h.username || h.address.slice(0, 6),
+            supplyShare: h.percentSupply,
+            pnl: 0,
+          })),
+        };
+      }));
+    }).catch(() => {}); // silent — keep empty
+    return () => { cancelled = true; };
+  }, [selectedCoinId]);
 
   // Find targeted active coin
   const activeCoin = coins.find((c) => c.id === selectedCoinId) || coins[0];

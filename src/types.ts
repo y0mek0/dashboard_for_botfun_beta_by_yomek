@@ -2,6 +2,7 @@ export interface Coin {
   id: string;
   symbol: string;
   name: string;
+  address: string;
   price: number; // in TIA or USD
   priceHistory: number[]; // Sparkline history (e.g. 20-30 data points)
   marketCap: number; // in USD or TIA

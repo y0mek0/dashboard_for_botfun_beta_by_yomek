@@ -109,3 +109,7 @@ export async function fetchCoinDetail(address: string): Promise<ApiCoin & { virt
 export async function fetchCoinHolders(address: string): Promise<{ address: string; username: string | null; balance: string; percentSupply: number; tiaSpent: string }[]> {
   return fetchJson(`/api/v1/coins/${address}/holders?limit=5`);
 }
+
+export async function fetchNewCoins(): Promise<ApiCoin[]> {
+  return fetchJson('/api/v1/coins/new');
+}
