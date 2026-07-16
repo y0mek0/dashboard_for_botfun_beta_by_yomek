@@ -105,3 +105,7 @@ export async function fetchCoinCandles(address: string, interval = '1h', limit =
 export async function fetchCoinDetail(address: string): Promise<ApiCoin & { virtualTiaReserve: string; virtualTokenReserve: string }> {
   return fetchJson(`/api/v1/coins/${address}`);
 }
+
+export async function fetchCoinHolders(address: string): Promise<{ address: string; username: string | null; balance: string; percentSupply: number; tiaSpent: string }[]> {
+  return fetchJson(`/api/v1/coins/${address}/holders?limit=5`);
+}
