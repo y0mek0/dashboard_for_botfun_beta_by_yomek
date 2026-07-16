@@ -5,7 +5,7 @@ const BOTFUN = 'https://bot.fun';
 let cacheBuster = 0;
 
 async function fetchJson<T>(path: string): Promise<T> {
-  const url = `${BASE}${path}${path.includes('?') ? '&' : '?'}_=${++cacheBuster}`;
+  const url = `${BASE}?path=${encodeURIComponent(path)}&_=${++cacheBuster}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`${path}: ${res.status}`);
   return res.json();
