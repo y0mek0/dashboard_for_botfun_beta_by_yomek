@@ -31,8 +31,8 @@ const AgentMetrics = React.memo(function AgentMetrics({ agents, selectedAgentId 
   const totalAgents = agents.length || 1;
 
   // Calculate some aggregate values for display
-  const averagePnL = agents.reduce((sum, a) => sum + a.pnl, 0) / totalAgents;
-  const totalTrades = agents.reduce((sum, a) => sum + a.tradeCount, 0);
+  const averagePnL = agents.reduce((sum, a) => sum + (a.pnl || 0), 0) / totalAgents;
+  const totalTrades = agents.reduce((sum, a) => sum + (a.tradeCount || 0), 0);
 
   return (
     <div className="flex flex-col h-full border border-dim bg-black/40 text-xs font-mono select-text">

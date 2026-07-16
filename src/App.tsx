@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import ErrorBoundary from './components/ErrorBoundary';
-import { fetchStats, fetchTiaPrice, fetchCoins, fetchAgents, fetchActivity, fetchCoinCandles } from './api';
+import { fetchStats, fetchTiaPrice, fetchCoins, fetchAgents, fetchActivity } from './api';
 import { Coin, Agent, FeedEvent, LaunchItem, SystemStats } from './types';
 
 // Import Custom Subcomponents
@@ -65,29 +65,20 @@ export default function App() {
 
         if (cancelled) return;
 
-        // Transform API coins to Coin type
-        const realCoins: Coin[] = await Promise.all(apiCoins.map(async (c, i) => {
-          let priceHistory: number[] = [];
-          try {
-            const candles = await fetchCoinCandles(c.address, '1h', 40);
-            priceHistory = candles.map(k => parseFloat(k.close));
-          } catch {
-            priceHistory = Array(40).fill(parseFloat(c.price));
-          }
-          return {
-            id: c.symbol.toLowerCase(),
-            symbol: c.symbol,
-            name: c.name,
-            price: parseFloat(c.price),
-            priceHistory: priceHistory.length ? priceHistory : Array(40).fill(parseFloat(c.price)),
-            marketCap: Math.round(parseFloat(c.marketCap)),
-            volume24h: Math.round(parseFloat(c.volume24h)),
-            change24h: i < 2 ? 5 + Math.random() * 10 : -5 + Math.random() * 10,
-            bondingProgress: Math.min(99, 30 + Math.random() * 60),
-            holdersCount: c.tradeCount,
-            holders: [],
-            activity24h: Array(24).fill(0).map(() => Math.floor(Math.random() * 80 + 10)),
-          };
+        // Transform API coins to Coin type — instant, no candle fetch
+        const realCoins: Coin[] = apiCoins.map((c, i) => ({
+          id: c.symbol.toLowerCase(),
+          symbol: c.symbol,
+          name: c.name,
+          price: parseFloat(c.price),
+          priceHistory: Array(40).fill(parseFloat(c.price)),
+          marketCap: Math.round(parseFloat(c.marketCap)),
+          volume24h: Math.round(parseFloat(c.volume24h)),
+          change24h: 0,
+          bondingProgress: 50,
+          holdersCount: c.tradeCount,
+          holders: [],
+          activity24h: Array(24).fill(0).map(() => Math.floor(Math.random() * 80 + 10)),
         }));
 
         // Transform API agents
