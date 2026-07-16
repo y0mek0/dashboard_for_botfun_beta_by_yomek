@@ -1,0 +1,6 @@
+{
+  "name": "BOT.FUN Terminal",
+  "description": "A premium single-page crypto ecosystem terminal inspired by quantitative trading workstations, Bloomberg Terminal, and futuristic sci-fi command centers.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
