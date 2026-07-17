@@ -205,7 +205,7 @@ const PriceChart = React.memo(function PriceChart({ selectedCoin }: PriceChartPr
     if (idx >= 0 && idx < len) {
       hoverIdxRef.current = idx;
       setHoverIdx(idx);
-      setHoverPos({ x: e.clientX, y: e.clientY });
+      setHoverPos({ x, y });
     }
   }, [selectedCoin.priceHistory.length]);
 
