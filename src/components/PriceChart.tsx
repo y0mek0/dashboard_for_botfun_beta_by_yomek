@@ -93,6 +93,16 @@ const PriceChart = React.memo(function PriceChart({ selectedCoin }: PriceChartPr
         ctx.fillText(`$${(maxP - ((maxP - minP) / 4) * i).toFixed(6)}`, w - pr + 2, y + 3);
       }
 
+      // X-axis time labels (every 8th point)
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
+      ctx.font = '8px "JetBrains Mono", monospace';
+      ctx.textAlign = 'center';
+      for (let i = 0; i < len; i += Math.max(1, Math.floor(len / 6))) {
+        const x = pl + (cw / Math.max(1, len - 1)) * i;
+        const hoursAgo = Math.round((len - 1 - i) * (24 / len));
+        ctx.fillText(`${hoursAgo}h`, x, h - 2);
+      }
+
       // Price line points
       const points: { x: number; y: number }[] = [];
       for (let i = 0; i < len; i++) {
@@ -236,22 +246,25 @@ const PriceChart = React.memo(function PriceChart({ selectedCoin }: PriceChartPr
         {/* Tooltip */}
         {hoverIdx !== null && hoverPos && tooltipData && (
           <div 
-            className="absolute pointer-events-none z-20 bg-black/90 border border-cyan-neon/30 px-2 py-1.5 text-xs font-mono shadow-lg"
+            className="absolute pointer-events-none z-20 bg-black/95 border border-cyan-neon/40 px-3 py-2 text-xs font-mono shadow-lg"
             style={{ 
-              left: hoverPos.x > window.innerWidth / 2 ? 'auto' : `${hoverPos.x + 10}px`,
-              right: hoverPos.x > window.innerWidth / 2 ? `${window.innerWidth - hoverPos.x + 10}px` : 'auto',
-              top: `${hoverPos.y - 60}px`,
+              left: hoverPos.x > window.innerWidth / 2 ? 'auto' : `${hoverPos.x + 12}px`,
+              right: hoverPos.x > window.innerWidth / 2 ? `${window.innerWidth - hoverPos.x + 12}px` : 'auto',
+              top: `${hoverPos.y - 70}px`,
             }}
           >
-            <div className="flex items-center gap-2 border-b border-white/10 pb-1 mb-1">
-              <span className="text-cyan-neon font-bold">${tooltipData.toFixed(8)}</span>
-              <span className={`font-bold ${tipChange >= 0 ? 'text-green-neon' : 'text-red-neon'}`}>
-                {tipChange >= 0 ? '+' : ''}{tipChange.toFixed(2)}%
+            <div className="text-cyan-neon font-bold text-sm mb-1">${tooltipData.toFixed(8)}</div>
+            <div className="flex items-center gap-2 text-[10px]">
+              <span className={tipChange >= 0 ? 'text-green-neon' : 'text-red-neon'}>
+                {tipChange >= 0 ? '▲' : '▼'} {Math.abs(tipChange).toFixed(2)}%
               </span>
+              <span className="text-white/40">|</span>
+              <span className="text-white/60">#{hoverIdx + 1}/{selectedCoin.priceHistory.length}</span>
             </div>
-            <div className="text-white/40">
-              <span className="block">Point {hoverIdx + 1}/{selectedCoin.priceHistory.length}</span>
-              <span className="block">{new Date().toLocaleDateString()} ({hoverIdx}h ago)</span>
+            <div className="text-white/30 text-[9px] mt-0.5">
+              {Math.round((selectedCoin.priceHistory.length - 1 - hoverIdx) * (24 / selectedCoin.priceHistory.length))}h ago
+              {' · '}
+              Vol: ${(selectedCoin.volume24h / selectedCoin.priceHistory.length).toLocaleString()}
             </div>
           </div>
         )}
