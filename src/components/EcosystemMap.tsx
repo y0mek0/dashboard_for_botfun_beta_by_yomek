@@ -417,7 +417,8 @@ const EcosystemMap = React.memo(function EcosystemMap({
             ctx.fillStyle = node.change24h >= 0 ? '#00FF41' : '#FF1744';
             ctx.font = '8px var(--font-mono)';
             const pct = Math.abs(node.change24h);
-            const pctStr = pct >= 1 ? pct.toFixed(1) : pct.toFixed(Math.max(2, Math.ceil(-Math.log10(pct)) + 2));
+            const precision = Math.min(10, Math.max(2, Math.ceil(-Math.log10(pct || 1e-10)) + 2));
+            const pctStr = pct >= 1 ? pct.toFixed(1) : pct.toFixed(precision);
             ctx.fillText(`${node.change24h >= 0 ? '+' : '-'}${pctStr}%`, node.x, node.y + node.radius + 10);
           }
         }
