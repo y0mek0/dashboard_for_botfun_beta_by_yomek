@@ -62,7 +62,6 @@ const PriceChart = React.memo(function PriceChart({ selectedCoin }: PriceChartPr
 
       const len = data.length;
       if (len === 0) { rafRef.current = requestAnimationFrame(render); return; }
-      if (len === 1) { rafRef.current = requestAnimationFrame(render); return; } // need 2+ points
 
       // Layout
       const pl = 15, pr = 55, pt = 25, pb = 20;
@@ -157,8 +156,10 @@ const PriceChart = React.memo(function PriceChart({ selectedCoin }: PriceChartPr
 
   // When coin data changes, set new target for interpolation
   useEffect(() => {
-    prevPricesRef.current = targetPricesRef.current.length ? [...targetPricesRef.current] : [...selectedCoin.priceHistory];
-    targetPricesRef.current = [...selectedCoin.priceHistory];
+    const newData = [...selectedCoin.priceHistory];
+    const prevLen = targetPricesRef.current.length;
+    prevPricesRef.current = prevLen === newData.length ? [...targetPricesRef.current] : new Array(newData.length).fill(newData[0]);
+    targetPricesRef.current = newData;
     animStartRef.current = performance.now();
     dirtyRef.current = true;
   }, [selectedCoin.priceHistory]);
