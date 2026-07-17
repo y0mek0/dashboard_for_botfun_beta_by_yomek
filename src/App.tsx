@@ -188,7 +188,7 @@ export default function App() {
       } catch { /* silent — keep previous data */ }
     }, 5000);
     return () => clearInterval(interval);
-  }, [isPaused, coins.length]);
+  }, [isPaused]);
 
   // Fetch holders when selected coin changes
   useEffect(() => {
@@ -210,9 +210,11 @@ export default function App() {
           })),
         };
       }));
-    }).catch(() => {}); // silent — keep empty
+    }).catch(err => {
+      if (!cancelled) console.error('[Botic] Holders fetch failed:', err.message);
+    });
     return () => { cancelled = true; };
-  }, [selectedCoinId]);
+  }, [selectedCoinId, coins]);
 
   // Fetch candles when selected coin changes (for Price Chart + Hourly Activity)
   useEffect(() => {
@@ -228,9 +230,11 @@ export default function App() {
         if (c.id !== selectedCoinId) return c;
         return { ...c, priceHistory: prices, activity24h: trades.slice(-24) };
       }));
-    }).catch(() => {});
+    }).catch(err => {
+      if (!cancelled) console.error('[Botic] Candles fetch failed:', err.message);
+    });
     return () => { cancelled = true; };
-  }, [selectedCoinId]);
+  }, [selectedCoinId, coins]);
 
   // Find targeted active coin
   const activeCoin = coins.find((c) => c.id === selectedCoinId) || coins[0];
