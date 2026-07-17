@@ -214,18 +214,19 @@ export default function App() {
     return () => { cancelled = true; };
   }, [selectedCoinId]);
 
-  // Fetch candles when selected coin changes (for Price Chart)
+  // Fetch candles when selected coin changes (for Price Chart + Hourly Activity)
   useEffect(() => {
     if (!selectedCoinId) return;
     const coin = coins.find(c => c.id === selectedCoinId);
-    if (!coin || coin.priceHistory.length > 1) return; // already has candles
+    if (!coin?.address) return;
     let cancelled = false;
     fetchCoinCandles(coin.address, '1h', 40).then(candles => {
       if (cancelled || !candles.length) return;
       const prices = candles.map(k => parseFloat(k.close));
+      const trades = candles.map(k => k.tradeCount);
       setCoins(prev => prev.map(c => {
         if (c.id !== selectedCoinId) return c;
-        return { ...c, priceHistory: prices };
+        return { ...c, priceHistory: prices, activity24h: trades.slice(-24) };
       }));
     }).catch(() => {});
     return () => { cancelled = true; };
