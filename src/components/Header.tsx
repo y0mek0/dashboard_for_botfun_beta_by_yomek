@@ -23,7 +23,7 @@ export default function Header({ stats, isPaused, setIsPaused, dataSource }: Hea
       <div className="flex flex-col md:flex-row items-center gap-4 md:gap-6 w-full md:w-auto">
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 bg-cyan-neon rounded-sm shadow-[0_0_8px_#00F0FF]"></div>
-          <span className="text-base font-bold tracking-widest text-white">BOTIC · AI TERMINAL</span>
+          <span className="text-base font-bold tracking-widest text-white">BOTIC · TERMINAL</span>
           <span className="text-[9px] text-white/20 border border-white/10 px-1.5 py-0.5 font-mono">BY YOMEK</span>
           <span className="text-xs font-mono text-cyan-neon border border-cyan-neon/30 px-1 py-0.2 bg-cyan-neon/5 rounded-xs">V2.0</span>
         </div>

@@ -252,7 +252,7 @@ const PriceChart = React.memo(function PriceChart({ selectedCoin }: PriceChartPr
             style={{ 
               left: hoverPos.x > window.innerWidth / 2 ? 'auto' : `${hoverPos.x + 12}px`,
               right: hoverPos.x > window.innerWidth / 2 ? `${window.innerWidth - hoverPos.x + 12}px` : 'auto',
-              top: `${hoverPos.y - 70}px`,
+              top: `${hoverPos.y + 20}px`,
             }}
           >
             <div className="text-cyan-neon font-bold text-sm mb-1">${tooltipData.toFixed(8)}</div>
