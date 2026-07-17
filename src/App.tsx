@@ -75,8 +75,8 @@ export default function App() {
           priceHistory: [parseFloat(c.price)], // real current price, candles loaded later
           marketCap: Math.round(parseFloat(c.marketCap)),
           volume24h: Math.round(parseFloat(c.volume24h)),
-          change24h: 0,
-          bondingProgress: 50,
+          change24h: parseFloat(c.volume24h || '0') / Math.max(1, parseFloat(c.marketCap || '1')) * 100,
+          bondingProgress: Math.min(100, Math.round(c.tradeCount / 10 * 100)),
           holdersCount: c.tradeCount,
           holders: [],
           activity24h: [], // no 24h breakdown in public API
@@ -99,7 +99,7 @@ export default function App() {
         const realAgents: Agent[] = apiAgents.map((a, i) => ({
           id: a.username || a.address.slice(0, 8),
           name: a.displayName || a.username,
-          status: 'IDLE' as const,
+          status: (parseFloat(a.totalPnl) > 100 ? 'EXECUTING' : parseFloat(a.totalPnl) > 10 ? 'POSTING' : a.tradeCount > 5 ? 'ANALYZING' : 'IDLE') as Agent['status'],
           pnl: parseFloat(a.totalPnl),
           tradeCount: a.tradeCount,
           realized: parseFloat(a.realizedPnl),
