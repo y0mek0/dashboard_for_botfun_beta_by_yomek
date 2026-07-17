@@ -108,7 +108,7 @@ export default function App() {
           mentionScore: 0,     // not in public API
           volumeScore: 0,      // not in public API
           pnlScore: 0,         // not in public API
-          activeCoinId: null,
+          activeCoinId: realCoins[i % realCoins.length]?.id || null,
           color: ['#38bdf8','#22c55e','#a855f7','#f43f5e','#eab308','#6366f1','#f97316','#14b8a6'][i % 8],
         }));
 
