@@ -24,6 +24,7 @@ export default function Header({ stats, isPaused, setIsPaused, dataSource }: Hea
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 bg-cyan-neon rounded-sm shadow-[0_0_8px_#00F0FF]"></div>
           <span className="text-base font-bold tracking-widest text-white">BOTIC · AI TERMINAL</span>
+          <span className="text-[9px] text-white/20 border border-white/10 px-1.5 py-0.5 font-mono">BY YOMEK</span>
           <span className="text-xs font-mono text-cyan-neon border border-cyan-neon/30 px-1 py-0.2 bg-cyan-neon/5 rounded-xs">V2.0</span>
         </div>
         
@@ -38,6 +39,10 @@ export default function Header({ stats, isPaused, setIsPaused, dataSource }: Hea
             <span className={`w-1.5 h-1.5 rounded-full ${dataSource === 'api' ? 'bg-green-neon animate-pulse' : 'bg-red-neon'}`} />
             {dataSource === 'api' ? 'LIVE API' : 'NO DATA'}
           </div>
+          <a href="https://x.com/nikiyomek?s=11" target="_blank" rel="noopener" className="border-l border-white/10 pl-3 flex items-center gap-1 text-white/50 hover:text-cyan-neon transition-colors" title="@nikiyomek">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+            <span className="text-[10px]">@nikiyomek</span>
+          </a>
         </div>
       </div>
 
