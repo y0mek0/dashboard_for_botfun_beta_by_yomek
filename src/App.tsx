@@ -205,7 +205,7 @@ export default function App() {
 
       // Update selected coin's current price (not full candles — instant)
       try {
-        const apiCoins = await fetchCoins(1);
+        const apiCoins = await fetchCoins(12);
         const freshCoin = apiCoins.find(c => c.symbol.toLowerCase() === selectedCoinId);
         if (freshCoin) {
           const freshPrice = parseFloat(freshCoin.price);
