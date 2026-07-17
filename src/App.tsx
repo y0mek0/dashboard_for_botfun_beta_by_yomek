@@ -202,9 +202,23 @@ export default function App() {
           };
         }));
       } catch { /* silent — keep previous data */ }
+
+      // Update selected coin's current price (not full candles — instant)
+      try {
+        const apiCoins = await fetchCoins(1);
+        const freshCoin = apiCoins.find(c => c.symbol.toLowerCase() === selectedCoinId);
+        if (freshCoin) {
+          const freshPrice = parseFloat(freshCoin.price);
+          setCoins(prev => prev.map(c => {
+            if (c.id !== selectedCoinId) return c;
+            const hist = [...c.priceHistory, freshPrice];
+            return { ...c, price: freshPrice, priceHistory: hist.slice(-60) };
+          }));
+        }
+      } catch {}
     }, 5000);
     return () => clearInterval(interval);
-  }, [isPaused]);
+  }, [isPaused, selectedCoinId]);
 
   // Fetch holders when selected coin changes
   useEffect(() => {
