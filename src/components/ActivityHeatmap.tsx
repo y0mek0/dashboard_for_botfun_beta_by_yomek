@@ -17,23 +17,12 @@ const ActivityHeatmap = React.memo(function ActivityHeatmap({ coins, selectedCoi
   // Max activity for cell opacity normalization
   const maxActivity = Math.max(...coins.flatMap(c => c.activity24h), 100);
 
-  // Map intensity value to styling color
+  // Map intensity value to styling — continuous opacity for visibility
   const getCellColor = (val: number, isSelectedCoin: boolean) => {
-    const ratio = val / maxActivity;
-    // We'll use either a green gradient or a cyan gradient
-    if (isSelectedCoin) {
-      if (ratio > 0.8) return { bg: 'bg-cyan-neon', text: 'text-black' };
-      if (ratio > 0.5) return { bg: 'bg-cyan-neon/80', text: 'text-white' };
-      if (ratio > 0.25) return { bg: 'bg-cyan-neon/50', text: 'text-slate-200' };
-      if (ratio > 0.1) return { bg: 'bg-cyan-neon/25', text: 'text-slate-400' };
-      return { bg: 'bg-cyan-neon/10 border border-cyan-neon/5', text: 'text-slate-500' };
-    } else {
-      if (ratio > 0.8) return { bg: 'bg-green-neon', text: 'text-black' };
-      if (ratio > 0.5) return { bg: 'bg-green-neon/80', text: 'text-white' };
-      if (ratio > 0.25) return { bg: 'bg-green-neon/50', text: 'text-slate-200' };
-      if (ratio > 0.1) return { bg: 'bg-green-neon/25', text: 'text-slate-400' };
-      return { bg: 'bg-green-neon/10 border border-green-neon/5', text: 'text-slate-500' };
-    }
+    const ratio = Math.min(1, val / Math.max(1, maxActivity));
+    const alpha = 0.05 + ratio * 0.95; // 5% to 100% opacity
+    const color = isSelectedCoin ? `rgba(0, 240, 255, ${alpha.toFixed(2)})` : `rgba(0, 255, 65, ${alpha.toFixed(2)})`;
+    return { bg: '', style: { backgroundColor: color } };
   };
 
   return (
@@ -99,7 +88,8 @@ const ActivityHeatmap = React.memo(function ActivityHeatmap({ coins, selectedCoi
                         onMouseEnter={() => setHoverCell({ coinId: coin.id, hour: hr, val: activityValue })}
                         onMouseLeave={() => setHoverCell(null)}
                         onClick={() => onSelectCoin(coin.id)}
-                        className={`flex-1 aspect-square min-h-[10px] transition-[background,box-shadow] duration-200 cursor-pointer ${style.bg} hover:ring-1 hover:ring-white active:scale-90`}
+                        className="flex-1 aspect-square min-h-[10px] transition-[background,box-shadow] duration-200 cursor-pointer hover:ring-1 hover:ring-white active:scale-90"
+                        style={{ backgroundColor: style.style.backgroundColor }}
                       />
                     );
                   })}
