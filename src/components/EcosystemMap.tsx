@@ -416,7 +416,9 @@ const EcosystemMap = React.memo(function EcosystemMap({
           if (node.change24h !== undefined) {
             ctx.fillStyle = node.change24h >= 0 ? '#00FF41' : '#FF1744';
             ctx.font = '8px var(--font-mono)';
-            ctx.fillText(`${node.change24h >= 0 ? '+' : ''}${node.change24h.toFixed(1)}%`, node.x, node.y + node.radius + 10);
+            const pct = Math.abs(node.change24h);
+            const pctStr = pct >= 1 ? pct.toFixed(1) : pct.toFixed(Math.max(2, Math.ceil(-Math.log10(pct)) + 2));
+            ctx.fillText(`${node.change24h >= 0 ? '+' : '-'}${pctStr}%`, node.x, node.y + node.radius + 10);
           }
         }
       });
