@@ -254,13 +254,15 @@ export default function App() {
   }, [selectedCoinId, coins]);
 
   // Periodic candle refresh for selected coin — every 60s
+  const coinAddressRef = useRef<string>('');
   useEffect(() => {
     if (!selectedCoinId || isPaused) return;
     const coin = coins.find(c => c.id === selectedCoinId);
     if (!coin?.address) return;
+    coinAddressRef.current = coin.address;
     const interval = setInterval(async () => {
       try {
-        const candles = await fetchCoinCandles(coin.address, '1h', 40);
+        const candles = await fetchCoinCandles(coinAddressRef.current, '1h', 40);
         if (!candles.length) return;
         const prices = candles.map(k => parseFloat(k.close));
         const trades = candles.map(k => k.tradeCount);
@@ -271,7 +273,7 @@ export default function App() {
       } catch {}
     }, 60000);
     return () => clearInterval(interval);
-  }, [selectedCoinId, isPaused, coins]);
+  }, [selectedCoinId, isPaused]);
 
   // Find targeted active coin
   const activeCoin = coins.find((c) => c.id === selectedCoinId) || coins[0];
