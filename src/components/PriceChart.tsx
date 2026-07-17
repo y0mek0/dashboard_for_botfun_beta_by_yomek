@@ -101,7 +101,7 @@ const PriceChart = React.memo(function PriceChart({ selectedCoin }: PriceChartPr
       for (let i = 0; i < len; i += xStep) {
         const x = pl + (cw / Math.max(1, len - 1)) * i;
         const candleAge = len - 1 - i;
-        ctx.fillText(candleAge === 0 ? 'now' : `${candleAge}c`, x, h - 2);
+        ctx.fillText(candleAge === 0 ? 'now' : `${candleAge}h`, x, h - 2);
       }
 
       // Price line points
@@ -264,7 +264,7 @@ const PriceChart = React.memo(function PriceChart({ selectedCoin }: PriceChartPr
               <span className="text-white/60">#{hoverIdx + 1}/{selectedCoin.priceHistory.length}</span>
             </div>
             <div className="text-white/30 text-[9px] mt-0.5">
-              {candleAge}c ago
+              {candleAge}h ago
               {' · '}
               Vol: ${(selectedCoin.volume24h / selectedCoin.priceHistory.length).toLocaleString()}
             </div>
