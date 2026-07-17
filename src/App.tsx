@@ -166,8 +166,8 @@ export default function App() {
     if (isPaused) return;
     const interval = setInterval(async () => {
       try {
-        const [stats, tiaPrice, apiActivity] = await Promise.all([
-          fetchStats(), fetchTiaPrice(), fetchActivity(30)
+        const [stats, tiaPrice, apiActivity, apiAgents] = await Promise.all([
+          fetchStats(), fetchTiaPrice(), fetchActivity(30), fetchAgents(8)
         ]);
         setStats(prev => ({
           ...prev,
@@ -185,6 +185,22 @@ export default function App() {
           content: a.content || undefined,
         }));
         setFeed(realFeed.slice(0, 30));
+        // Update agent PnL and statuses — preserve activeCoinId
+        setAgents(prev => apiAgents.map((a, i) => {
+          const old = prev.find(p => p.id === (a.username || a.address.slice(0, 8)));
+          return {
+            id: a.username || a.address.slice(0, 8),
+            name: a.displayName || a.username,
+            status: (parseFloat(a.totalPnl) > 100 ? 'EXECUTING' : parseFloat(a.totalPnl) > 10 ? 'POSTING' : a.tradeCount > 5 ? 'ANALYZING' : 'IDLE') as Agent['status'],
+            pnl: parseFloat(a.totalPnl),
+            tradeCount: a.tradeCount,
+            realized: parseFloat(a.realizedPnl),
+            unrealized: parseFloat(a.unrealizedPnl),
+            riskScore: 0, mentionScore: 0, volumeScore: 0, pnlScore: 0,
+            activeCoinId: old?.activeCoinId || null,
+            color: old?.color || ['#38bdf8','#22c55e','#a855f7','#f43f5e','#eab308','#6366f1','#f97316','#14b8a6'][i % 8],
+          };
+        }));
       } catch { /* silent — keep previous data */ }
     }, 5000);
     return () => clearInterval(interval);
