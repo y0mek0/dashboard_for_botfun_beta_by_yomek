@@ -93,14 +93,15 @@ const PriceChart = React.memo(function PriceChart({ selectedCoin }: PriceChartPr
         ctx.fillText(`$${(maxP - ((maxP - minP) / 4) * i).toFixed(6)}`, w - pr + 2, y + 3);
       }
 
-      // X-axis time labels (every 8th point)
+      // X-axis time labels
       ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
       ctx.font = '8px "JetBrains Mono", monospace';
       ctx.textAlign = 'center';
-      for (let i = 0; i < len; i += Math.max(1, Math.floor(len / 6))) {
+      const xStep = Math.max(1, Math.floor(len / 6));
+      for (let i = 0; i < len; i += xStep) {
         const x = pl + (cw / Math.max(1, len - 1)) * i;
-        const hoursAgo = Math.round((len - 1 - i) * (24 / len));
-        ctx.fillText(`${hoursAgo}h`, x, h - 2);
+        const candleAge = len - 1 - i;
+        ctx.fillText(candleAge === 0 ? 'now' : `${candleAge}c`, x, h - 2);
       }
 
       // Price line points
@@ -220,6 +221,7 @@ const PriceChart = React.memo(function PriceChart({ selectedCoin }: PriceChartPr
   const tooltipData = hoverIdx !== null ? selectedCoin.priceHistory[hoverIdx] : null;
   const prevPrice = hoverIdx !== null && hoverIdx > 0 ? selectedCoin.priceHistory[hoverIdx - 1] : null;
   const tipChange = tooltipData && prevPrice && prevPrice !== 0 ? ((tooltipData - prevPrice) / prevPrice * 100) : 0;
+  const candleAge = hoverIdx !== null ? selectedCoin.priceHistory.length - 1 - hoverIdx : 0;
 
   return (
     <div className="flex flex-col h-full border border-dim bg-black/40">
@@ -262,7 +264,7 @@ const PriceChart = React.memo(function PriceChart({ selectedCoin }: PriceChartPr
               <span className="text-white/60">#{hoverIdx + 1}/{selectedCoin.priceHistory.length}</span>
             </div>
             <div className="text-white/30 text-[9px] mt-0.5">
-              {Math.round((selectedCoin.priceHistory.length - 1 - hoverIdx) * (24 / selectedCoin.priceHistory.length))}h ago
+              {candleAge}c ago
               {' · '}
               Vol: ${(selectedCoin.volume24h / selectedCoin.priceHistory.length).toLocaleString()}
             </div>
