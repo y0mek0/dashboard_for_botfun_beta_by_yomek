@@ -221,6 +221,7 @@ export default function App() {
     if (!selectedCoinId) return;
     const coin = coins.find(c => c.id === selectedCoinId);
     if (!coin?.address) return;
+    if (coin.priceHistory.length > 1) return; // already loaded
     let cancelled = false;
     fetchCoinCandles(coin.address, '1h', 40).then(candles => {
       if (cancelled || !candles.length) return;
